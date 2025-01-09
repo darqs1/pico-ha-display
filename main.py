@@ -27,20 +27,30 @@ def get_biuro_data():
     bearer = env.bearer
     headers = {"Authorization" : f"Bearer {bearer}" }
 
-    entity_id = "sensor.temperatura_balkon_temperature"
+    entities = [
+        "sensor.temperatura_balkon_temperature",
+        "sensor.temperatura_salon_temperature",
+        "sensor.temperatura_salon_2_temperature",
+        ]
 
-    try:
-        response = urequests.get("http://homeassistant.local:8123/api/states/"+entity_id, headers=headers) 
-    except:
-        balkon_temp = None
-    else:
-        if response.status_code == 200:
-            res = response.json()
-            balkon_temp = res['state']
+    values = []
+
+    for entity_id in entities:
+
+        try:
+            response = urequests.get("http://homeassistant.local:8123/api/states/"+entity_id, headers=headers) 
+        except:
+            entity_value = None
         else:
-            balkon_temp = None
-
-    return balkon_temp
+            if response.status_code == 200:
+                res = response.json()
+                entity_value = res['state']
+            else:
+                entity_value = None
+        
+        values.append(entity_value)
+        
+    return values
 
 
 
@@ -48,16 +58,20 @@ def main():
     connect()
     d.clear()
     d.center("Temperatura", color=st7789.YELLOW)
-    d.center("na balkonie", color=st7789.YELLOW)
+    d.center("na zewnatrz", color=st7789.YELLOW)
     block_line = d.line
+    d.line = d.line + 40
+    d.center("w salonie", color=st7789.YELLOW)
     while True:
         # d.clear()
-        balkon_temp = get_biuro_data()
-        d.center(f"     {balkon_temp} *C     ", color=st7789.GREEN, line=block_line)
+        balkon_temp, salon_temp, salon_temp2 = get_biuro_data()
+        d.center(f"     {balkon_temp} *C     ", color=st7789.GREEN, line=block_line-20)
+        d.center(f"     {salon_temp2} *C     ", color=st7789.GREEN, line=block_line+90)
+        d.center(f"     {salon_temp} *C     ", color=st7789.GREEN, line=block_line+125)
         for i in range(0,33):
             sleep(1)
-            d.print(text="  .",line=block_line+60, col=i*6)
-        d.print(text="                              ",line=block_line+60)
+            d.print(text="  .",line=block_line+200, col=i*6)
+        d.print(text="                              ",line=block_line+200)
 
 main()
     
